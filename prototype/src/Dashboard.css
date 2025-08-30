@@ -397,7 +397,6 @@ html, body {
     height: 20px;
     margin-right: 12px;
 }
-
 .alert-item.orange .alert-icon {
     color: #ea580c;
 }
@@ -757,7 +756,6 @@ html, body {
 .performance-item.green .performance-value { color: #16a34a; }
 .performance-item.blue .performance-value { color: #2563eb; }
 .performance-item.purple .performance-value { color: #9333ea; }
-
 .performance-label {
     font-size: 14px;
     color: #6b7280;
@@ -1153,7 +1151,6 @@ html, body {
         height: auto;
         min-height: 0;
     }
-
     .metrics-grid {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
