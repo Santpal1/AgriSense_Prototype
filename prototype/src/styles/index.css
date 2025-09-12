@@ -1,0 +1,54 @@
+/* Import all CSS modules */
+@import './layout.css';
+@import './components.css';
+@import './pages.css';
+@import './responsive.css';
+
+/* CSS Reset to remove default margins and padding */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Main Dashboard Layout */
+.dashboard {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background-color: #f3f4f6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: calc(100% - 256px);
+    height: 100vh;
+}
+
+.content {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+    height: calc(100vh - 64px); /* Subtract header height */
+    position: relative;
+}
+
+.content-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}

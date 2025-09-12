@@ -1,0 +1,118 @@
+/* CSS Reset to remove default margins and padding */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Typography */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f3f4f6;
+    color: #1f2937;
+}
+
+/* Card Styles */
+.card, .metric-card, .chart-card, .alerts-card, .health-map-card, .table-card {
+    background-color: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #1f2937;
+}
+
+/* Button Styles */
+.btn {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn.primary {
+    background-color: #16a34a;
+    color: white;
+}
+
+.btn.primary:hover {
+    background-color: #15803d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .sidebar-nav {
+        padding: 8px;
+    }
+
+    .nav-list {
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 8px;
+    }
+
+    .nav-item {
+        white-space: nowrap;
+        min-width: 120px;
+    }
+
+    .main-content {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+        padding: 16px;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+
+    .content {
+        height: auto;
+        padding: 16px;
+    }
+}
