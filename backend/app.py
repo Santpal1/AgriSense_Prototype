@@ -56,6 +56,7 @@ CORS(app, origins=["http://localhost:5173"])
 # Load models
 crop_pipeline: CropStressModel = joblib.load("models/crop_model_pipeline.pkl")
 cnn_model = tf.keras.models.load_model("models/crop_health_model.h5")
+pest_model = tf.keras.models.load_model("models/pest_risk_lstm_model.h5", compile=False)
 
 # -----------------------
 # Endpoint 1: Stress & Recommendations (index-based model)
@@ -108,6 +109,73 @@ def predict_crop_health():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# -----------------------
+# Endpoint 3: Pest Risk Prediction (LSTM sequence model)
+# -----------------------
+@app.route("/predict/pest-risk", methods=["GET"])
+def predict_pest_risk():
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        c = conn.cursor(dictionary=True)
+
+        # Fetch last 5 records (for sequence input)
+        c.execute("SELECT * FROM crop_stats ORDER BY timestamp DESC LIMIT 5")
+        rows = c.fetchall()
+        conn.close()
+
+        if len(rows) < 5:
+            return jsonify({"error": "Not enough data for pest risk prediction"}), 400
+
+        # Order by ascending timestamp (LSTM needs correct sequence order)
+        rows = sorted(rows, key=lambda r: r["timestamp"])
+
+        # Extract 18 features (mean, median, std for each index)
+        feature_names = [
+            "NDVI_mean",
+            "NDWI_mean",
+            "NDSI_mean",
+            "SWIR_mean",
+            "FalseColor_mean",
+            "TCI_mean"
+        ]
+
+        X_seq = []
+        for r in rows:
+            feats = [r[f] for f in feature_names]
+            X_seq.append(feats)
+
+        # Reshape into (1, timesteps, features)
+        X_seq = np.array(X_seq).reshape(1, 5, 6)
+
+        # Predict
+        preds = pest_model.predict(X_seq, verbose=0)
+        pred_idx = np.argmax(preds, axis=1)[0]
+        confidence = float(np.max(preds))
+
+        # Map to human-readable risk
+        risk_levels = ["low", "medium", "high"]
+        risk_label = risk_levels[pred_idx]
+
+        # Recommendation mapping
+        if risk_label == "low":
+            recommendation = "✅ No immediate action required. Continue routine monitoring."
+        elif risk_label == "medium":
+            recommendation = "⚠️ Apply preventive measures (early pest detection, eco-friendly pesticides)."
+        else:
+            recommendation = "🚨 Immediate action required! Use strong pest control measures and monitor daily."
+
+        return jsonify({
+            "risk_level": risk_label,
+            "confidence": round(confidence, 3),
+            "recommendation": recommendation
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# -----------------------
+# Endpoint: Latest crop stats
+# -----------------------
 @app.route("/latest-crop-stats", methods=["GET"])
 def latest_crop_stats():
     try:
@@ -139,7 +207,47 @@ def latest_crop_stats():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    
+
+# -----------------------
+# Endpoint: Last 5 crop stats (for analytics/graphs)
+# -----------------------
+@app.route("/recent-crop-stats", methods=["GET"])
+def recent_crop_stats():
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        c = conn.cursor(dictionary=True)
+
+        # Fetch last 5 rows sorted by date (most recent first)
+        c.execute("SELECT * FROM crop_stats ORDER BY timestamp DESC LIMIT 5")
+        rows = c.fetchall()
+        conn.close()
+
+        if not rows:
+            return jsonify({"error": "No data found"}), 404
+
+        # Sort rows ascending (so frontend gets time series correctly)
+        rows = sorted(rows, key=lambda r: r["timestamp"])
+
+        # Build response
+        response = []
+        for row in rows:
+            response.append({
+                "timestamp": row["timestamp"],
+                "indices": {
+                    "NDVI": {"mean": row["NDVI_mean"], "median": row["NDVI_median"], "std": row["NDVI_std"]},
+                    "NDWI": {"mean": row["NDWI_mean"], "median": row["NDWI_median"], "std": row["NDWI_std"]},
+                    "NDSI": {"mean": row["NDSI_mean"], "median": row["NDSI_median"], "std": row["NDSI_std"]},
+                    "SWIR": {"mean": row["SWIR_mean"], "median": row["SWIR_median"], "std": row["SWIR_std"]},
+                    "FalseColor": {"mean": row["FalseColor_mean"], "median": row["FalseColor_median"], "std": row["FalseColor_std"]},
+                    "TCI": {"mean": row["TCI_mean"], "median": row["TCI_median"], "std": row["TCI_std"]}
+                }
+            })
+
+        return jsonify(response)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 # -----------------------
 # Run app
 # -----------------------
