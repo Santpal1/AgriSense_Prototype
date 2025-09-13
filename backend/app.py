@@ -6,6 +6,7 @@ from PIL import Image
 from flask_cors import CORS
 import mysql.connector
 import os
+import pandas as pd
 
 DB_CONFIG = {
     "host": "localhost",
@@ -53,10 +54,47 @@ class CropStressModel:
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173"])
 
+# -----------------------
 # Load models
+# -----------------------
 crop_pipeline: CropStressModel = joblib.load("models/crop_model_pipeline.pkl")
 cnn_model = tf.keras.models.load_model("models/crop_health_model.h5")
 pest_model = tf.keras.models.load_model("models/pest_risk_lstm_model.h5", compile=False)
+soil_model, soil_scaler, soil_imputer = joblib.load("models/soil_health_regressor.pkl")
+
+# -----------------------
+# Soil health helper functions
+# -----------------------
+def compute_soil_index_bounds():
+    conn = mysql.connector.connect(**DB_CONFIG)
+    c = conn.cursor(dictionary=True)
+    c.execute("SELECT NDVI_mean, NDWI_mean, SWIR_mean, NDSI_mean FROM crop_stats")
+    rows = c.fetchall()
+    conn.close()
+
+    if not rows:
+        return 0, 1  # fallback
+
+    df = pd.DataFrame(rows)
+    # replicate the same soil index formula
+    df["soil_index"] = (
+        0.3 * df["NDVI_mean"]
+        + 0.3 * df["NDWI_mean"]
+        + 0.2 * (1 - df["NDSI_mean"].abs())
+        + 0.2 * df["SWIR_mean"]
+    )
+    return df["soil_index"].min(), df["soil_index"].max()
+
+soil_min, soil_max = compute_soil_index_bounds()
+
+def categorize_soil_health(shi, min_val, max_val):
+    norm = (shi - min_val) / (max_val - min_val + 1e-9)  # normalize 0-1
+    if norm >= 0.66:
+        return "healthy"
+    elif norm >= 0.33:
+        return "moderate"
+    else:
+        return "poor"
 
 # -----------------------
 # Endpoint 1: Stress & Recommendations (index-based model)
@@ -129,7 +167,7 @@ def predict_pest_risk():
         # Order by ascending timestamp (LSTM needs correct sequence order)
         rows = sorted(rows, key=lambda r: r["timestamp"])
 
-        # Extract 18 features (mean, median, std for each index)
+        # Extract 6 features
         feature_names = [
             "NDVI_mean",
             "NDWI_mean",
@@ -172,6 +210,62 @@ def predict_pest_risk():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@app.route("/predict/soil-health", methods=["GET"])
+def predict_soil_health():
+    try:
+        # Optional params
+        limit = request.args.get("limit", default=1, type=int)
+        poor_thresh = request.args.get("poor", default=300, type=float)
+        moderate_thresh = request.args.get("moderate", default=700, type=float)
+
+        # Connect DB
+        conn = mysql.connector.connect(**DB_CONFIG)
+        c = conn.cursor(dictionary=True)
+        c.execute(f"SELECT * FROM crop_stats ORDER BY timestamp DESC LIMIT {limit}")
+        rows = c.fetchall()
+        conn.close()
+
+        if not rows:
+            return jsonify({"error": "No data found"}), 404
+
+        rows = sorted(rows, key=lambda r: r["timestamp"])  # oldest → newest
+
+        # Load model, scaler, imputer
+        model, scaler, imputer = joblib.load("models/soil_health_regressor.pkl")
+        feature_names = ["FalseColor_mean", "NDVI_mean", "NDWI_mean", "SWIR_mean", "TCI_mean", "NDSI_mean"]
+
+        results = []
+        for row in rows:
+            X = np.array([row[f] for f in feature_names]).reshape(1, -1)
+            X = imputer.transform(X)
+            X = scaler.transform(X)
+
+            pred_val = float(model.predict(X)[0])
+
+            # ✅ Threshold classification controlled by frontend
+            if pred_val < poor_thresh:
+                pred_class = "poor"
+            elif poor_thresh <= pred_val <= moderate_thresh:
+                pred_class = "moderate"
+            else:
+                pred_class = "healthy"
+
+            results.append({
+                "timestamp": row["timestamp"],
+                "soil_health_index": round(pred_val, 3),
+                "soil_health_class": pred_class,
+                "thresholds": {
+                    "poor": poor_thresh,
+                    "moderate": moderate_thresh
+                }
+            })
+
+        return jsonify(results[0] if limit == 1 else results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 # -----------------------
 # Endpoint: Latest crop stats
