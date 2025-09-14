@@ -15,7 +15,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: "soil-analysis", label: "Soil Analysis", icon: Mountain },
     { id: "pest-detection", label: "Pest Detection", icon: Bug },
     { id: "field-map", label: "Field Map", icon: Map },
-    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   return (

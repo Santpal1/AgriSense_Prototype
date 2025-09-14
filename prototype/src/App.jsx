@@ -6,7 +6,6 @@ import CropHealth from "./pages/CropHealth";
 import SoilAnalysis from "./pages/SoilAnalysis";
 import PestDetection from "./pages/PestDetection";
 import FieldMap from "./pages/FieldMap";
-import Settings from "./pages/Settings";
 import "./styles/index.css";
 
 const AgriDashboard = () => {
@@ -24,8 +23,6 @@ const AgriDashboard = () => {
         return <PestDetection />;
       case "field-map":
         return <FieldMap />;
-      case "settings":
-        return <Settings />;
       default:
         return <Overview />;
     }

@@ -16,7 +16,7 @@ DB_CONFIG = {
     "user": "root",
     "password": "",  # set your MySQL password
     "database": "satellite_data",
-    "port": 3307
+    "port": 3306
 }
 LATEST_IMAGE_PATH = "latest_truecolor.jpg" 
 
