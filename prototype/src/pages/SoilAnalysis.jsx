@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Download, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Droplets, Thermometer, Activity, BarChart3 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, RadialBarChart, RadialBar, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+import { Download, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Droplets, Thermometer, Activity, BarChart3, Beaker, Send, RefreshCw } from "lucide-react";
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar 
+} from "recharts";
 
 const SoilAnalysis = () => {
   const [soilData, setSoilData] = useState([]);
@@ -8,6 +10,47 @@ const SoilAnalysis = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [thresholds, setThresholds] = useState({ poor: 300, moderate: 700 });
+
+  // Hardcoded soil fertility values
+  const hardcodedFertilityData = {
+    N: 280,
+    P: 15,
+    K: 200,
+    pH: 6.5,
+    EC: 0.8,
+    OC: 0.75,
+    S: 12,
+    Zn: 1.2,
+    Fe: 8.5,
+    Cu: 2.8,
+    Mn: 15,
+    B: 0.6
+  };
+
+  // State for fertility result
+  const [fertilityResult, setFertilityResult] = useState(null);
+
+  // Fetch fertility prediction once on mount
+  useEffect(() => {
+    const fetchFertility = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/predict/soil-fertility', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(hardcodedFertilityData)
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to analyze soil fertility');
+        }
+        const result = await response.json();
+        setFertilityResult(result);
+      } catch (err) {
+        setFertilityResult({ error: err.message });
+      }
+    };
+    fetchFertility();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +84,24 @@ const SoilAnalysis = () => {
 
   const updateThresholds = (poor, moderate) => {
     setThresholds({ poor, moderate });
+  };
+
+  const getFertilityColor = (label) => {
+    switch (label) {
+      case "High Fertility": return "#10b981";
+      case "Medium Fertility": return "#f59e0b";
+      case "Low Fertility": return "#ef4444";
+      default: return "#6b7280";
+    }
+  };
+
+  const getFertilityIcon = (label) => {
+    switch (label) {
+      case "High Fertility": return <CheckCircle style={{ width: '24px', height: '24px', color: '#10b981' }} />;
+      case "Medium Fertility": return <AlertTriangle style={{ width: '24px', height: '24px', color: '#f59e0b' }} />;
+      case "Low Fertility": return <AlertTriangle style={{ width: '24px', height: '24px', color: '#ef4444' }} />;
+      default: return <Activity style={{ width: '24px', height: '24px', color: '#6b7280' }} />;
+    }
   };
 
   const getHealthColor = (classification) => {
@@ -123,6 +184,25 @@ const SoilAnalysis = () => {
   const indicatorData = prepareNormalizedIndicatorData();
   const indexTrendData = prepareNormalizedIndexTrendData();
 
+  // Prepare fertility data for charts
+  const fertilityChartData = [
+    { name: 'N', value: hardcodedFertilityData.N, color: '#3b82f6' },
+    { name: 'P', value: hardcodedFertilityData.P, color: '#10b981' },
+    { name: 'K', value: hardcodedFertilityData.K, color: '#f59e0b' },
+    { name: 'S', value: hardcodedFertilityData.S, color: '#8b5cf6' },
+    { name: 'Zn', value: hardcodedFertilityData.Zn, color: '#6366f1' },
+    { name: 'Fe', value: hardcodedFertilityData.Fe, color: '#ef4444' },
+    { name: 'Cu', value: hardcodedFertilityData.Cu, color: '#a3e635' },
+    { name: 'Mn', value: hardcodedFertilityData.Mn, color: '#f472b6' },
+    { name: 'B', value: hardcodedFertilityData.B, color: '#fbbf24' }
+  ];
+
+  const fertilityPieData = [
+    { name: 'N', value: hardcodedFertilityData.N, color: '#3b82f6' },
+    { name: 'P', value: hardcodedFertilityData.P, color: '#10b981' },
+    { name: 'K', value: hardcodedFertilityData.K, color: '#f59e0b' }
+  ];
+
   if (loading) {
     return (
       <div className="content-section">
@@ -195,6 +275,12 @@ const SoilAnalysis = () => {
       color: '#6b7280',
       marginTop: '4px',
       fontSize: '14px'
+    },
+    sectionTitle: {
+      fontSize: '18px',
+      fontWeight: '600',
+      color: '#1f2937',
+      marginBottom: '16px'
     },
     thresholdControls: {
       backgroundColor: '#f9fafb',
@@ -324,14 +410,6 @@ const SoilAnalysis = () => {
       padding: '6px 0',
       boxShadow: '0 2px 8px rgba(60,60,120,0.07)'
     },
-    tableRow: {
-      borderBottom: '1px solid #e5e7eb',
-      transition: 'background 0.3s',
-      cursor: 'pointer'
-    },
-    tableRowHover: {
-      background: 'linear-gradient(90deg, #e0e7ff 0%, #f0fdf4 100%)'
-    },
     table: {
       width: '100%',
       fontSize: '14px',
@@ -393,6 +471,128 @@ const SoilAnalysis = () => {
     },
     recommendationText: {
       fontSize: '14px'
+    },
+    // Fertility testing styles
+    fertilitySection: {
+      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+      border: '1px solid #bae6fd',
+      borderRadius: '16px',
+      padding: '24px',
+      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.1)'
+    },
+    fertilityHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px'
+    },
+    fertilityTitle: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      fontSize: '20px',
+      fontWeight: '600',
+      color: '#1e40af',
+      margin: 0
+    },
+    fertilityFormGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '16px',
+      marginBottom: '20px'
+    },
+    fertilityInputGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px'
+    },
+    fertilityLabel: {
+      fontSize: '13px',
+      fontWeight: '500',
+      color: '#374151'
+    },
+    fertilityInput: {
+      padding: '10px 12px',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      fontSize: '14px',
+      transition: 'all 0.2s',
+      outline: 'none'
+    },
+    fertilityActions: {
+      display: 'flex',
+      gap: '12px',
+      justifyContent: 'flex-end',
+      marginBottom: '20px'
+    },
+    btnPrimary: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '10px 16px',
+      backgroundColor: '#2563eb',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontWeight: '500',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      outline: 'none'
+    },
+    btnSecondary: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '10px 16px',
+      backgroundColor: '#f3f4f6',
+      color: '#374151',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontWeight: '500',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      outline: 'none'
+    },
+    fertilityResultCard: {
+      backgroundColor: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: '12px',
+      padding: '20px',
+      marginTop: '20px',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+    },
+    fertilityResultHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginBottom: '16px'
+    },
+    fertilityResultTitle: {
+      fontSize: '18px',
+      fontWeight: '600',
+      color: '#1f2937',
+      margin: 0
+    },
+    fertilityResultValue: {
+      fontSize: '24px',
+      fontWeight: 'bold',
+      marginBottom: '8px'
+    },
+    errorCard: {
+      backgroundColor: '#fef2f2',
+      border: '1px solid #fecaca',
+      borderRadius: '8px',
+      padding: '16px',
+      marginTop: '16px'
+    },
+    errorText: {
+      color: '#b91c1c',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
     }
   };
 
@@ -410,6 +610,7 @@ const SoilAnalysis = () => {
             const exportData = {
               soil_health: soilData,
               crop_indicators: cropStats,
+              fertility_result: fertilityResult,
               thresholds: thresholds,
               analysis_date: new Date().toISOString()
             };
@@ -428,9 +629,196 @@ const SoilAnalysis = () => {
         </button>
       </div>
 
+      {/* Soil Fertility Display (no user input, just hardcoded values and prediction) */}
+      <div style={styles.fertilitySection}>
+        <div style={styles.fertilityHeader}>
+          <h3 style={styles.fertilityTitle}>
+            <Beaker />
+            Soil Fertility Analysis
+          </h3>
+        </div>
+        <div style={{ marginBottom: '20px' }}>
+          <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#2563eb', marginBottom: '8px' }}>
+            Parameters
+          </h4>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '12px'
+          }}>
+            {[
+              { key: 'N', label: 'Nitrogen (N)', unit: 'kg/ha' },
+              { key: 'P', label: 'Phosphorus (P)', unit: 'kg/ha' },
+              { key: 'K', label: 'Potassium (K)', unit: 'kg/ha' },
+              { key: 'pH', label: 'pH Level', unit: '' },
+              { key: 'EC', label: 'Electrical Conductivity (EC)', unit: 'dS/m' },
+              { key: 'OC', label: 'Organic Carbon (OC)', unit: '%' },
+              { key: 'S', label: 'Sulfur (S)', unit: 'mg/kg' },
+              { key: 'Zn', label: 'Zinc (Zn)', unit: 'mg/kg' },
+              { key: 'Fe', label: 'Iron (Fe)', unit: 'mg/kg' },
+              { key: 'Cu', label: 'Copper (Cu)', unit: 'mg/kg' },
+              { key: 'Mn', label: 'Manganese (Mn)', unit: 'mg/kg' },
+              { key: 'B', label: 'Boron (B)', unit: 'mg/kg' }
+            ].map(param => (
+              <div key={param.key} style={{
+                background: '#f9fafb',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                border: '1px solid #e5e7eb',
+                fontSize: '14px',
+                color: '#374151',
+                fontWeight: 500
+              }}>
+                <span style={{ color: '#2563eb', fontWeight: 600 }}>{param.label}</span>
+                <br />
+                <span style={{ color: '#1e293b', fontWeight: 700 }}>{hardcodedFertilityData[param.key]}</span>
+                {param.unit && <span style={{ color: '#64748b', marginLeft: '4px' }}>{param.unit}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Fertility Bar Chart */}
+        <div style={{
+          background: 'rgba(255,255,255,0.8)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+          boxShadow: '0 2px 8px rgba(59,130,246,0.08)'
+        }}>
+          <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>
+            Macro & Micro Nutrients (Bar Chart)
+          </h4>
+          <div style={{ height: '180px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={fertilityChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ef" />
+                <XAxis dataKey="name" tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                <Tooltip />
+                <Bar dataKey="value">
+                  {fertilityChartData.map((entry, idx) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Fertility Pie Chart */}
+        <div style={{
+          background: 'rgba(255,255,255,0.8)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+          boxShadow: '0 2px 8px rgba(59,130,246,0.08)'
+        }}>
+          <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>
+            NPK Distribution (Pie Chart)
+          </h4>
+          <div style={{ height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <ResponsiveContainer width="80%" height="100%">
+              <PieChart>
+                <Pie
+                  data={fertilityPieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={70}
+                  paddingAngle={4}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {fertilityPieData.map((entry, idx) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {fertilityResult && !fertilityResult.error && (
+          <div style={{
+            ...styles.fertilityResultCard,
+            background: 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)',
+            border: '1px solid #bae6fd'
+          }}>
+            <div style={styles.fertilityResultHeader}>
+              {getFertilityIcon(fertilityResult.fertility_label)}
+              <h4 style={styles.fertilityResultTitle}>Fertility Analysis Results</h4>
+            </div>
+            <div style={{
+              ...styles.fertilityResultValue,
+              color: getFertilityColor(fertilityResult.fertility_label),
+              textShadow: '0 2px 8px #bae6fd'
+            }}>
+              {fertilityResult.fertility_label}
+            </div>
+            <div style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              marginBottom: '16px'
+            }}>
+              Prediction Score: {fertilityResult.prediction}
+            </div>
+            {/* Fertility Recommendations */}
+            <div style={{
+              backgroundColor: '#f8fafc',
+              borderRadius: '8px',
+              padding: '16px',
+              marginTop: '12px',
+              boxShadow: '0 2px 8px rgba(59,130,246,0.07)'
+            }}>
+              <h5 style={{ margin: '0 0 12px 0', color: '#374151', fontSize: '16px', fontWeight: '600' }}>
+                Recommendations
+              </h5>
+              {fertilityResult.fertility_label === "Low Fertility" && (
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151', fontSize: '14px', lineHeight: '1.6' }}>
+                  <li>Apply nitrogen-rich fertilizers (NPK 20-10-10)</li>
+                  <li>Add organic compost to improve soil structure</li>
+                  <li>Consider lime application if pH is below 6.0</li>
+                  <li>Test and supplement micronutrients (Zn, Fe, Mn)</li>
+                  <li>Implement crop rotation with nitrogen-fixing legumes</li>
+                </ul>
+              )}
+              {fertilityResult.fertility_label === "Medium Fertility" && (
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151', fontSize: '14px', lineHeight: '1.6' }}>
+                  <li>Apply balanced fertilizers (NPK 15-15-15)</li>
+                  <li>Monitor and maintain optimal pH levels (6.0-7.0)</li>
+                  <li>Continue organic matter addition</li>
+                  <li>Regular soil testing every 6 months</li>
+                  <li>Consider precision fertilizer application</li>
+                </ul>
+              )}
+              {fertilityResult.fertility_label === "High Fertility" && (
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151', fontSize: '14px', lineHeight: '1.6' }}>
+                  <li>Maintain current nutrient management practices</li>
+                  <li>Focus on micronutrient balance</li>
+                  <li>Implement precision agriculture techniques</li>
+                  <li>Monitor for potential nutrient excess</li>
+                  <li>Annual soil testing to track changes</li>
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+        {fertilityResult && fertilityResult.error && (
+          <div style={styles.errorCard}>
+            <div style={styles.errorText}>
+              <AlertTriangle style={{ width: '16px', height: '16px' }} />
+              {fertilityResult.error}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Threshold Controls */}
       <div style={styles.thresholdControls}>
-        <h3 style={styles.thresholdTitle}>Classification Thresholds</h3>
+        <h3 style={styles.thresholdTitle}>Satellite Data Classification Thresholds</h3>
         <div style={styles.thresholdGrid}>
           <div style={styles.inputGroup}>
             <label style={styles.inputLabel}>Poor Threshold</label>
@@ -639,7 +1027,7 @@ const SoilAnalysis = () => {
                     <tr
                       key={idx}
                       style={styles.tableRow}
-                      onMouseEnter={e => e.currentTarget.style.background = styles.tableRowHover.background}
+                      onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(90deg, #e0e7ff 0%, #f0fdf4 100%)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       <td style={styles.tableCell}>

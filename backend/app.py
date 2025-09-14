@@ -61,6 +61,9 @@ crop_pipeline: CropStressModel = joblib.load("models/crop_model_pipeline.pkl")
 cnn_model = tf.keras.models.load_model("models/crop_health_model.h5")
 pest_model = tf.keras.models.load_model("models/pest_risk_lstm_model.h5", compile=False)
 soil_model, soil_scaler, soil_imputer = joblib.load("models/soil_health_regressor.pkl")
+soil_fertility_model = joblib.load("models/xgb_model.pkl")
+
+fertility_mapping = {0: "Low Fertility", 1: "Medium Fertility", 2: "High Fertility"}
 
 # -----------------------
 # Soil health helper functions
@@ -341,6 +344,47 @@ def recent_crop_stats():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+    
+# -----------------------
+# Endpoint: Soil Fertility (XGBoost with imputer + scaler)
+# -----------------------
+@app.route("/predict/soil-fertility", methods=["POST"])
+def predict_soil_fertility():
+    try:
+        data = request.json
+
+        # Required features (same order as training)
+        expected_features = ['N','P','K','pH','EC','OC','S','Zn','Fe','Cu','Mn','B']
+
+        # Validate input
+        for f in expected_features:
+            if f not in data:
+                return jsonify({"error": f"Missing feature: {f}"}), 400
+
+        # Convert into DataFrame
+        sample_df = pd.DataFrame([data], columns=expected_features)
+
+        # Load pre-saved XGBoost model, imputer, and scaler
+        xgb_model = joblib.load("models/xgb_model.pkl")
+        imputer = joblib.load("models/imputer.pkl")
+        scaler = joblib.load("models/scaler.pkl")
+
+        # Preprocess the input
+        X_imputed = imputer.transform(sample_df)
+        X_scaled = scaler.transform(X_imputed)
+
+        # Predict
+        pred = xgb_model.predict(X_scaled)[0]
+        fertility_label = fertility_mapping.get(int(pred), "Unknown")
+
+        return jsonify({
+            "prediction": int(pred),
+            "fertility_label": fertility_label
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 # -----------------------
 # Run app
