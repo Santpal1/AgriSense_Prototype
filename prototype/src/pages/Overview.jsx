@@ -35,6 +35,8 @@ import {
   Pie,
   Cell
 } from "recharts";
+const API_BASE = import.meta.env.VITE_API_URL;
+
 
 const Overview = () => {
   const [overviewData, setOverviewData] = useState({
@@ -53,10 +55,10 @@ const Overview = () => {
     try {
       // Fetch all data in parallel
       const [cropStatsRes, recentStatsRes, pestRiskRes, soilHealthRes] = await Promise.all([
-        fetch("http://localhost:5000/latest-crop-stats"),
-        fetch("http://localhost:5000/recent-crop-stats"),
-        fetch("http://localhost:5000/predict/pest-risk"),
-        fetch("http://localhost:5000/predict/soil-health?limit=1")
+        fetch(`${API_BASE}/latest-crop-stats`),
+        fetch(`${API_BASE}/recent-crop-stats`),
+        fetch(`${API_BASE}/predict/pest-risk`),
+        fetch(`${API_BASE}/predict/soil-health?limit=1`)
       ]);
 
       const cropStats = await cropStatsRes.json();

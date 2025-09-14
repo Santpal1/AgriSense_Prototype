@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 // Mock data for sensor points
 const fixedSensorPoints = [
@@ -26,9 +27,9 @@ const FieldMap = () => {
       
       // Fetch crop statistics
       const [cropResponse, soilResponse, pestResponse] = await Promise.allSettled([
-        fetch('http://localhost:5000/latest-crop-stats'),
-        fetch('http://localhost:5000/predict/soil-health'),
-        fetch('http://localhost:5000/predict/pest-risk')
+        fetch(`${API_BASE}/latest-crop-stats`),
+        fetch(`${API_BASE}/predict/soil-health`),
+        fetch(`${API_BASE}/predict/pest-risk`)
       ]);
 
       // Handle crop stats
@@ -198,7 +199,7 @@ const FieldMap = () => {
                 <div className="fieldmap-map-area">
                   {/* Satellite image as background */}
                   <img
-                    src="http://localhost:5000/static/latest_truecolor.jpg"
+                    src={`${API_BASE}/static/latest_truecolor.jpg`}
                     alt="Satellite True Color"
                     className="fieldmap-map-img"
                   />

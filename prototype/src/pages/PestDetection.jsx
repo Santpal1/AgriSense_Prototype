@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AlertTriangle, Activity, TrendingUp, Calendar, RefreshCw, Shield, Bug, Leaf, Droplets } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const PestDetection = () => {
   const [pestRisk, setPestRisk] = useState(null);
@@ -14,17 +15,17 @@ const PestDetection = () => {
     setLoading(true);
     try {
       // Fetch pest risk
-      const pestRes = await fetch("http://localhost:5000/predict/pest-risk");
+      const pestRes = await fetch(`${API_BASE}/predict/pest-risk`);
       const pestData = await pestRes.json();
 
       if (pestData.error) throw new Error(pestData.error);
 
       // Fetch latest crop stats
-      const cropRes = await fetch("http://localhost:5000/latest-crop-stats");
+      const cropRes = await fetch(`${API_BASE}/latest-crop-stats`);
       const cropData = await cropRes.json();
 
       // Fetch recent stats for trends
-      const recentRes = await fetch("http://localhost:5000/recent-crop-stats");
+      const recentRes = await fetch(`${API_BASE}/recent-crop-stats`);
       const recentData = await recentRes.json();
 
       setPestRisk(pestData);
@@ -587,7 +588,7 @@ const PestDetection = () => {
             borderRadius: '8px'
           }}>
             <img
-              src={`http://localhost:5000${cropStats.true_color_image}`}
+              src={`${API_BASE}${cropStats.true_color_image}`}
               alt="Latest Satellite True Color"
               style={{
                 maxWidth: '100%',

@@ -3,6 +3,7 @@ import { Download, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Droplet
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar 
 } from "recharts";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const SoilAnalysis = () => {
   const [soilData, setSoilData] = useState([]);
@@ -34,7 +35,7 @@ const SoilAnalysis = () => {
   useEffect(() => {
     const fetchFertility = async () => {
       try {
-        const response = await fetch('http://localhost:5000/predict/soil-fertility', {
+        const response = await fetch(`${API_BASE}/predict/soil-fertility`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(hardcodedFertilityData)
@@ -59,14 +60,14 @@ const SoilAnalysis = () => {
         
         // Fetch soil health data with configurable thresholds
         const soilRes = await fetch(
-          `http://localhost:5000/predict/soil-health?limit=5&poor=${thresholds.poor}&moderate=${thresholds.moderate}`
+          `${API_BASE}/predict/soil-health?limit=5&poor=${thresholds.poor}&moderate=${thresholds.moderate}`
         );
         if (!soilRes.ok) throw new Error("Failed to fetch soil data");
         const soilData = await soilRes.json();
         setSoilData(Array.isArray(soilData) ? soilData : [soilData]);
 
         // Fetch recent crop stats for additional soil indicators
-        const statsRes = await fetch("http://localhost:5000/recent-crop-stats");
+        const statsRes = await fetch(`${API_BASE}/recent-crop-stats`);
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setCropStats(statsData);

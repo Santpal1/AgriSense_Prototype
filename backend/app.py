@@ -7,12 +7,16 @@ from flask_cors import CORS
 import mysql.connector
 import os
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()  # load .env
 
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "",  # set your MySQL password
-    "database": "satellite_data"
+    "database": "satellite_data",
+    "port": 3307
 }
 LATEST_IMAGE_PATH = "latest_truecolor.jpg" 
 
@@ -390,4 +394,6 @@ def predict_soil_fertility():
 # Run app
 # -----------------------
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    port = int(os.getenv("FLASK_PORT", 5000))  # fallback 5000 if not set
+    app.run(debug=True, host="0.0.0.0", port=port)
+

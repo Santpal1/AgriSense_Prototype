@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Download, CheckCircle2, Upload, Camera, Activity, TrendingUp, Leaf, AlertCircle, RefreshCw, BarChart3, Zap, Droplets, Sun } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, RadialBarChart, RadialBar, Legend } from "recharts";
 import axios from "axios";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const CropHealth = () => {
   const [latestData, setLatestData] = useState(null);
@@ -21,8 +22,8 @@ const CropHealth = () => {
     setLoadingData(true);
     try {
       const [latestRes, recentRes] = await Promise.all([
-        axios.get("http://localhost:5000/latest-crop-stats"),
-        axios.get("http://localhost:5000/recent-crop-stats")
+        axios.get(`${API_BASE}/latest-crop-stats`),
+        axios.get(`${API_BASE}/recent-crop-stats`)
       ]);
       
       setLatestData(latestRes.data);
@@ -66,7 +67,7 @@ const CropHealth = () => {
       formData.append("file", imageFile);
 
       const healthRes = await axios.post(
-        "http://localhost:5000/predict/crop-health",
+        `${API_BASE}/predict/crop-health`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -101,7 +102,7 @@ const CropHealth = () => {
       ];
 
       const stressRes = await axios.post(
-        "http://localhost:5000/predict/stress",
+        `${API_BASE}/predict/stress`,
         { features }
       );
 
@@ -656,7 +657,7 @@ const CropHealth = () => {
           {latestData && latestData.true_color_image ? (
             <div>
               <img
-                src={`http://localhost:5000${latestData.true_color_image}`}
+                src={`${API_BASE}${latestData.true_color_image}`}
                 alt="Latest Satellite"
                 style={{
                   width: '100%',
