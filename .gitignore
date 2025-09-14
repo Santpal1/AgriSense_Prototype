@@ -2,3 +2,8 @@ node_modules/
 models/
 *.h5
 *.pkl
+
+# Ignore environment files
+.env
+backend/.env
+prototype/.env
