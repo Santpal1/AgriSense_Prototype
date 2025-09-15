@@ -18,6 +18,7 @@ const FieldMap = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [showMapPopup, setShowMapPopup] = useState(false);
 
   // Fetch all data from multiple endpoints
   const fetchAllData = async (showRefreshing = false) => {
@@ -196,15 +197,29 @@ const FieldMap = () => {
             <div className="fieldmap-card fieldmap-h-full">
               <div className="fieldmap-card-padding">
                 <h3 className="fieldmap-card-title">Field Overview</h3>
-                <div className="fieldmap-map-area">
-                  {/* Satellite image as background */}
-                  <img
-                    src={`${API_BASE}/static/latest_truecolor.jpg`}
-                    alt="Satellite True Color"
-                    className="fieldmap-map-img"
-                  />
+                <div className="fieldmap-map-area" style={{ position: "relative", height: "100%" }}>
+                  {/* Button to open interactive map popup */}
+                  <button
+                    style={{
+                      position: "absolute",
+                      top: "16px",
+                      right: "16px",
+                      zIndex: 10,
+                      background: "#2563eb",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "8px 16px",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+                    }}
+                    onClick={() => setShowMapPopup(true)}
+                  >
+                    Open Interactive Map
+                  </button>
                   <div className="fieldmap-map-label">
-                    Satellite View
+                    Interactive Farm Map
                   </div>
                   {/* Overlay for selected index */}
                   {selectedIndex && (
@@ -429,6 +444,67 @@ const FieldMap = () => {
           </div>
         </div>
       </div>
+      {/* Popup for interactive map */}
+      {showMapPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, width: "100vw", height: "100vh",
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+          onClick={() => setShowMapPopup(false)}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "90vw",
+              maxWidth: "900px",
+              height: "80vh",
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 8px 32px rgba(60,60,120,0.18)",
+              overflow: "hidden"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <iframe
+              src={`${API_BASE}/static/farm_map.html`}
+              title="Farm Map Interactive"
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                borderRadius: "16px"
+              }}
+              allow="fullscreen"
+              sandbox="allow-scripts allow-same-origin"
+            />
+            <button
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                padding: "8px 16px",
+                fontWeight: 500,
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                zIndex: 10
+              }}
+              onClick={() => setShowMapPopup(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       {/* CSS Styles */}
       <style>
         {`
