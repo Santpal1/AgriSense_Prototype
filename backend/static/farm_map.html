@@ -1,112 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
-    
-            <meta name="viewport" content="width=device-width,
-                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-            <style>
-                #map_de1e8e58e5a571ae83d61ff51f8b287f {
-                    position: relative;
-                    width: 100.0%;
-                    height: 100.0%;
-                    left: 0.0%;
-                    top: 0.0%;
-                }
-                .leaflet-container { font-size: 1rem; }
-            </style>
-
-            <style>html, body {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            </style>
-
-            <style>#map {
-                position:absolute;
-                top:0;
-                bottom:0;
-                right:0;
-                left:0;
-                }
-            </style>
-
-            <script>
-                L_NO_TOUCH = false;
-                L_DISABLE_3D = false;
-            </script>
-
-        
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0; bottom: 0; left: 0; right: 0;
+        }
+        .leaflet-container { font-size: 1rem; }
+        .small-tooltip {
+            font-size: 10px;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
-    
-    
-            <div class="folium-map" id="map_de1e8e58e5a571ae83d61ff51f8b287f" ></div>
-        
+    <div id="map"></div>
+    <script>
+        var map = L.map("map", {
+            center: [30.2753, 74.8746],
+            zoom: 18
+        });
+
+        L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { attribution: "Esri World Imagery" }
+        ).addTo(map);
+
+        // --- Left Field Sensors (spread out in a triangle) ---
+        var leftFieldSensors = [
+            { coords: [30.2756,74.8745], color: 'red', label: 'NPK' },
+            { coords: [30.2749,74.8746], color: 'green', label: 'pH' },
+            { coords: [30.2752,74.8742], color: 'blue', label: 'Soil/Temp/Moisture' }
+        ];
+
+        // --- Right Field Sensors (spread out in a triangle) ---
+        var rightFieldSensors = [
+            { coords: [30.2762,74.8761], color: 'red', label: 'NPK' },
+            { coords: [30.2758,74.8765], color: 'green', label: 'pH' },
+            { coords: [30.2751,74.8762], color: 'blue', label: 'Soil/Temp/Moisture' }
+        ];
+
+        // Add sensors with smaller labels
+        [leftFieldSensors, rightFieldSensors].forEach(group => {
+            group.forEach(sensor => {
+                L.circleMarker(sensor.coords, {
+                    radius: 6,
+                    color: sensor.color,
+                    fillColor: sensor.color,
+                    fillOpacity: 1
+                }).addTo(map)
+                  .bindTooltip(sensor.label, {
+                      permanent: true,
+                      direction: 'top',
+                      className: 'small-tooltip'
+                  });
+            });
+        });
+
+        // Click popup to get lat/lng
+        var popup = L.popup();
+        function latLngPop(e) {
+            popup
+                .setLatLng(e.latlng)
+                .setContent("Latitude: " + e.latlng.lat.toFixed(4) +
+                            "<br>Longitude: " + e.latlng.lng.toFixed(4))
+                .openOn(map);
+        }
+        map.on('click', latLngPop);
+    </script>
 </body>
-<script>
-    
-    
-            var map_de1e8e58e5a571ae83d61ff51f8b287f = L.map(
-                "map_de1e8e58e5a571ae83d61ff51f8b287f",
-                {
-                    center: [30.2753, 74.8746],
-                    crs: L.CRS.EPSG3857,
-                    ...{
-  "zoom": 18,
-  "zoomControl": true,
-  "preferCanvas": false,
-}
-
-                }
-            );
-
-            
-
-        
-    
-            var tile_layer_9f7e1bd18919e85bd01656415b164908 = L.tileLayer(
-                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                {
-  "minZoom": 0,
-  "maxZoom": 18,
-  "maxNativeZoom": 18,
-  "noWrap": false,
-  "attribution": "Esri World Imagery",
-  "subdomains": "abc",
-  "detectRetina": false,
-  "tms": false,
-  "opacity": 1,
-}
-
-            );
-        
-    
-            tile_layer_9f7e1bd18919e85bd01656415b164908.addTo(map_de1e8e58e5a571ae83d61ff51f8b287f);
-        
-    
-                var lat_lng_popup_5906dbbabc8c328cd3f9fdd293a6dfc9 = L.popup();
-                function latLngPop(e) {
-                    lat_lng_popup_5906dbbabc8c328cd3f9fdd293a6dfc9
-                        .setLatLng(e.latlng)
-                        .setContent("Latitude: " + e.latlng.lat.toFixed(4) +
-                                    "<br>Longitude: " + e.latlng.lng.toFixed(4))
-                        .openOn(map_de1e8e58e5a571ae83d61ff51f8b287f);
-                    }
-                map_de1e8e58e5a571ae83d61ff51f8b287f.on('click', latLngPop);
-            
-</script>
 </html>
